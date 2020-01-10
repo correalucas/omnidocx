@@ -31,64 +31,12 @@ require 'omnidocx'
 
 # To merge multiple docx files into one, you can use the following
 # documents_to_merge is an array of documents (file paths) need to be merged and page_break is a boolean value if you want page breaks in b/w documents
-$ Omnidocx::Docx.merge_documents(documents_to_merge=[], output_document_path, page_break)
+$ Omnidocx::Docx.merge_documents(documents_to_merge=[], place_to_be_merged, output_document_path)
 
 # for e.g. if you had to merge two documents, just pass their entire paths in an array, if you need a page break in between documents then pass the page_break flag as true 
-$ Omnidocx::Docx.merge_documents(['tmp/doc1.docx', 'tmp/doc2.docx'], 'tmp/output_doc.docx', true)
+$ Omnidocx::Docx.merge_documents(['tmp/doc1.docx', 'tmp/doc2.docx'], 'SOME_TEXT_IN_DOCUMENT', 'tmp/output_doc.docx')
 ```
 
-## To Write Images to a Document
-```ruby
-require 'omnidocx'
-
-# To write images to a document, you can use the following
-# images_to_write is an array of hashes, where each hash stores information about one image
-$ Omnidocx::Docx.write_images_to_doc(images_to_write=[], input_document_path, output_document_path)
-
-# Below is an example of the images_to_write array that you can pass in for images to be written to the doc
-# image path, height and width are mandatory
-
-    $ images_to_write = [ {
-                          :path => "tmp/image1.jpg",     #URL || local path
-                          :height => 500,
-                          :width => 500,
-                          :hdpi => 115,       #optional
-                          :vdpi => 115        #optional
-                          },
-                          :path => "https://xyz.com/abc.jpeg",    #URL || local path
-                          :height => 800,
-                          :width => 500,
-                          :hdpi => 115,       #optional
-                          :vdpi => 115        #optional
-                          }
-                        ]
-
-```
-
-## For String Replacements
-
-There are three different methods that can be used for string replacements
-
-```ruby
-require 'omnidocx'
-
-# replacement_hash is a hash with keys present in the document that are to be replaced with their corresponding values
-
-# For document content, you can use the following
-$ Omnidocx::Docx.replace_doc_content(replacement_hash={}, input_document_path, output_document_path)
-
-# For header content, you can use the following
-$ Omnidocx::Docx.replace_header_content(replacement_hash={}, input_document_path, output_document_path)
-
-# For footer content, you can use the following
-$ Omnidocx::Docx.replace_footer_content(replacement_hash={}, input_document_path, output_document_path)
-
-# Below is an example of how replacement_hash can be constructed 
-$ replacement_hash = { "first_name" => "John", "last_name" => "Doe"}
-
-```
-
-Will be adding test specs soon.
 
 ## Development
 
