@@ -1,0 +1,55 @@
+require:
+  - rubocop-rails
+  - rubocop-performance
+Rails/UnknownEnv:
+  Environments:
+    - development
+    - test
+    - staging
+    - pre
+    - production
+AllCops:
+  Exclude:
+    - 'db/schema.rb'
+    - 'lib/tasks/**/*'
+    - 'log/**'
+    - 'bin/**'
+    - '**/*.erb'
+    - 'app/channels/**/*'
+    - 'lib/templates/**/*'
+    - 'node_modules/**/*'
+Bundler/OrderedGems:
+  Enabled: false
+Lint/UselessAccessModifier: # private keyword created by docit snippet
+  Enabled: false
+Layout/EndOfLine:  # interference of annotate gem with windows cr/crlf
+  Enabled: false
+Layout/TrailingWhitespace:
+  Enabled: false
+Metrics:
+  Enabled: false
+Style/ClassAndModuleChildren:
+  EnforcedStyle: compact
+  Exclude:
+    - config/application.rb
+    - lib/core_extend/audited/audit.rb
+Style/Documentation:
+  Enabled: false
+Style/EmptyMethod:
+  EnforcedStyle: expanded
+Style/FrozenStringLiteralComment:
+  Enabled: false
+Style/Lambda: # multiline lambdas in scopes
+  Enabled: false
+Style/SymbolArray:
+  Enabled: false
+Style/RescueModifier:
+  Enabled: false
+Style/FormatStringToken:
+  Enabled: false
+Rails/SkipsModelValidations:
+  Enabled: false
+Rails/FilePath:
+  Enabled: false
+Rails/OutputSafety:
+  Enabled: false
