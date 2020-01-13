@@ -6,16 +6,9 @@ require 'mime/types'
 require 'open-uri'
 
 class Omnidocx::Docx
-  DOCUMENT_FILE_PATH = 'word/document.xml'.freeze
   RELATIONSHIP_FILE_PATH = 'word/_rels/document.xml.rels'.freeze
-  RELATIONSHIP_FILES_PATH = 'word/_rels/*.rels'.freeze
   CONTENT_TYPES_FILE = '[Content_Types].xml'.freeze
   STYLES_FILE_PATH = 'word/styles.xml'.freeze
-
-  EMUSPERINCH = 914_400
-  EMUSPERCM = 360_000
-  HORIZONTAL_DPI = 115
-  VERTICAL_DPI = 117
 
   NAMESPACES = {
     "w": 'http://schemas.openxmlformats.org/wordprocessingml/2006/main',
@@ -24,6 +17,11 @@ class Omnidocx::Docx
     "pic": 'http://schemas.openxmlformats.org/drawingml/2006/picture',
     "r": 'http://schemas.openxmlformats.org/officeDocument/2006/relationships'
   }.freeze
+
+  def document_file(file)
+    rel_xml = Nokogiri::XML(file.read('_rels/.rels'))
+    rel_xml.at_css('[Id="rId1"]').attr('Target').gsub(%r{^\/}, '')
+  end
 
   def self.merge_documents(documents_to_merge = [], merge_place = nil, final_path)
     temp_file = Tempfile.new('docxedit-')
@@ -34,14 +32,12 @@ class Omnidocx::Docx
 
     # first document to which the others will be appended (header/footer will be picked from this document)
     @main_document_zip = Zip::File.new(documents_to_merge.first)
-    @main_document_xml = Nokogiri::XML(@main_document_zip.read(DOCUMENT_FILE_PATH))
+    document_file_path = document_file(@main_document_zip)
+    @main_document_xml = Nokogiri::XML(@main_document_zip.read(document_file_path))
     @main_body = @main_document_xml.xpath('//w:body')
 
-    if merge_place.present?
-      @place = @main_body.children.xpath("//w:t[contains(text(),'#{merge_place}')]").first
-    else
-      @place = @main_body.children.last
-    end
+    @place = @main_body.children.last
+    @place = @main_body.children.xpath("//w:t[contains(text(),'#{merge_place}')]").first if merge_place.present?
 
     return 'Place to merge document not found' if @place.blank?
 
@@ -132,7 +128,7 @@ class Omnidocx::Docx
         end
 
         zip_file.entries.each do |e|
-          unless e.name == DOCUMENT_FILE_PATH || [RELATIONSHIP_FILE_PATH, CONTENT_TYPES_FILE, STYLES_FILE_PATH].include?(e.name)
+          unless e.name == document_file_path || [RELATIONSHIP_FILE_PATH, CONTENT_TYPES_FILE, STYLES_FILE_PATH].include?(e.name)
             if e.name.include?("word/media/image")
               #  media files from header & footer from first document shouldn't be changed
               if head_foot_media["doc#{doc_cnt}"].include?(e.name.gsub("word/media/", ""))
@@ -156,7 +152,7 @@ class Omnidocx::Docx
         end
 
         # updating the stlye ids in the table elements present in the document content XML
-        doc_content = doc_cnt == 0 ? @main_body : Nokogiri::XML(zip_file.read(DOCUMENT_FILE_PATH))
+        doc_content = doc_cnt == 0 ? @main_body : Nokogiri::XML(zip_file.read(document_file_path))
         doc_content.xpath("//w:tbl").each do |tbl_node|
           style_last = tbl_node.xpath('.//w:tblStyle').last
           unless style_last.nil?
@@ -251,7 +247,7 @@ class Omnidocx::Docx
       zos.print @cont_type_doc.to_xml
 
       # writing the updated document content XML to the new zip
-      zos.put_next_entry(DOCUMENT_FILE_PATH)
+      zos.put_next_entry(document_file_path)
       zos.print @main_document_xml.to_xml
     end
 
