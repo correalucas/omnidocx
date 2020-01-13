@@ -6,7 +6,6 @@ require 'mime/types'
 require 'open-uri'
 
 class Omnidocx::Docx
-  RELATIONSHIP_FILE_PATH = 'word/_rels/document.xml.rels'.freeze
   CONTENT_TYPES_FILE = '[Content_Types].xml'.freeze
   STYLES_FILE_PATH = 'word/styles.xml'.freeze
 
@@ -18,9 +17,16 @@ class Omnidocx::Docx
     "r": 'http://schemas.openxmlformats.org/officeDocument/2006/relationships'
   }.freeze
 
-  def self.document_file(file)
-    rel_xml = Nokogiri::XML(file.read('_rels/.rels'))
-    rel_xml.at_css('[Id="rId1"]').attr('Target').gsub(%r{^\/}, '')
+  def self.document_file_path(file = nil)
+    return 'word/document.xml' if file.blank?
+
+    file.find { |f| f.name.match?(%r{^(\b|\/)word\/document(\w|\b)+.xml$}) }.name
+  end
+
+  def self.relationship_file_path(file = nil)
+    return 'word/_rels/document.xml.rels' if file.blank?
+
+    file.find { |f| f.name.match?(%r{^(\b|\/)word\/\_rels\/document(\w|\b)+\.xml\.rels$}) }.name
   end
 
   def self.merge_documents(documents_to_merge = [], merge_place = nil, final_path)
@@ -32,8 +38,8 @@ class Omnidocx::Docx
 
     # first document to which the others will be appended (header/footer will be picked from this document)
     @main_document_zip = Zip::File.new(documents_to_merge.first)
-    document_file_path = document_file(@main_document_zip)
-    @main_document_xml = Nokogiri::XML(@main_document_zip.read(document_file_path))
+
+    @main_document_xml = Nokogiri::XML(@main_document_zip.read(document_file_path(@main_document_zip)))
     @main_body = @main_document_xml.xpath('//w:body')
 
     @place = @main_body.children.last
@@ -72,7 +78,7 @@ class Omnidocx::Docx
       in_stream = zip_entrie.get_input_stream.read
 
       # Relationship XML
-      @rel_doc = Nokogiri::XML(in_stream) if zip_entrie.name == RELATIONSHIP_FILE_PATH
+      @rel_doc = Nokogiri::XML(in_stream) if zip_entrie.name == relationship_file_path(@main_document_zip)
 
       # Styles XML to be updated later on with the additional tables info
       @style_doc = Nokogiri::XML(in_stream) if zip_entrie.name == STYLES_FILE_PATH
@@ -128,7 +134,7 @@ class Omnidocx::Docx
         end
 
         zip_file.entries.each do |e|
-          unless e.name == document_file_path || [RELATIONSHIP_FILE_PATH, CONTENT_TYPES_FILE, STYLES_FILE_PATH].include?(e.name)
+          unless e.name == document_file_path || [relationship_file_path, CONTENT_TYPES_FILE, STYLES_FILE_PATH].include?(e.name)
             if e.name.include?("word/media/image")
               #  media files from header & footer from first document shouldn't be changed
               if head_foot_media["doc#{doc_cnt}"].include?(e.name.gsub("word/media/", ""))
@@ -165,7 +171,7 @@ class Omnidocx::Docx
 
         zip_file.entries.each do |e|
           # updating the relationship ids with the new media file names in the relationships XML
-          if e.name == RELATIONSHIP_FILE_PATH
+          if e.name == relationship_file_path
             rel_xml = doc_cnt == 0 ? @rel_doc : Nokogiri::XML(e.get_input_stream.read)
 
             rel_xml.css("Relationship").each do |node|
@@ -235,7 +241,7 @@ class Omnidocx::Docx
       zos.print @style_doc.to_xml
 
       # writing the updated relationships XML to the new zip
-      zos.put_next_entry(RELATIONSHIP_FILE_PATH)
+      zos.put_next_entry(relationship_file_path(@main_document_zip))
       zos.print @rel_doc.to_xml
 
       zos.put_next_entry(CONTENT_TYPES_FILE)
@@ -248,6 +254,7 @@ class Omnidocx::Docx
 
       # writing the updated document content XML to the new zip
       zos.put_next_entry(document_file_path)
+
       zos.print @main_document_xml.to_xml
     end
 
