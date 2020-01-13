@@ -18,7 +18,7 @@ class Omnidocx::Docx
     "r": 'http://schemas.openxmlformats.org/officeDocument/2006/relationships'
   }.freeze
 
-  def document_file(file)
+  def self.document_file(file)
     rel_xml = Nokogiri::XML(file.read('_rels/.rels'))
     rel_xml.at_css('[Id="rId1"]').attr('Target').gsub(%r{^\/}, '')
   end
