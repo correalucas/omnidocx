@@ -8,7 +8,6 @@ require 'open-uri'
 class Omnidocx::Docx
   DOCUMENT_FILE_PATH = 'word/document.xml'.freeze
   RELATIONSHIP_FILE_PATH = 'word/_rels/document.xml.rels'.freeze
-  RELATIONSHIP_FILES_PATH = 'word/_rels/*.rels'.freeze
   CONTENT_TYPES_FILE = '[Content_Types].xml'.freeze
   STYLES_FILE_PATH = 'word/styles.xml'.freeze
 
@@ -76,7 +75,7 @@ class Omnidocx::Docx
       in_stream = zip_entrie.get_input_stream.read
 
       # Relationship XML
-      @rel_doc = Nokogiri::XML(in_stream) if zip_entrie.name == relationship_file_path(@main_document_zip)
+      @rel_doc = Nokogiri::XML(in_stream) if zip_entrie.name == RELATIONSHIP_FILE_PATH
 
       # Styles XML to be updated later on with the additional tables info
       @style_doc = Nokogiri::XML(in_stream) if zip_entrie.name == STYLES_FILE_PATH
@@ -132,7 +131,7 @@ class Omnidocx::Docx
         end
 
         zip_file.entries.each do |e|
-          unless e.name == document_file_path || [relationship_file_path, CONTENT_TYPES_FILE, STYLES_FILE_PATH].include?(e.name)
+          unless e.name == document_FILE_PATH || [RELATIONSHIP_FILE_PATH, CONTENT_TYPES_FILE, STYLES_FILE_PATH].include?(e.name)
             if e.name.include?("word/media/image")
               #  media files from header & footer from first document shouldn't be changed
               if head_foot_media["doc#{doc_cnt}"].include?(e.name.gsub("word/media/", ""))
@@ -169,7 +168,7 @@ class Omnidocx::Docx
 
         zip_file.entries.each do |e|
           # updating the relationship ids with the new media file names in the relationships XML
-          if e.name == relationship_file_path
+          if e.name == RELATIONSHIP_FILE_PATH
             rel_xml = doc_cnt == 0 ? @rel_doc : Nokogiri::XML(e.get_input_stream.read)
 
             rel_xml.css("Relationship").each do |node|
@@ -241,7 +240,7 @@ class Omnidocx::Docx
       zos.print @style_doc.to_xml
 
       # writing the updated relationships XML to the new zip
-      zos.put_next_entry(relationship_file_path(@main_document_zip))
+      zos.put_next_entry(RELATIONSHIP_FILE_PATH)
       zos.print @rel_doc.to_xml
 
       zos.put_next_entry(CONTENT_TYPES_FILE)
