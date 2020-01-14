@@ -228,7 +228,9 @@ class Omnidocx::Docx
           body_nodes = doc_content.xpath('//w:body').children[0..-2]
 
           # appending the body_nodes to main document's body
-          @place.parent.children = body_nodes
+          parent_node = @place.parent.parent
+          parent_node.children.remove
+          parent_node.add_child body_nodes
         end
 
         doc_cnt += 1
