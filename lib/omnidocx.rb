@@ -131,7 +131,7 @@ class Omnidocx::Docx
         end
 
         zip_file.entries.each do |e|
-          unless e.name == document_FILE_PATH || [RELATIONSHIP_FILE_PATH, CONTENT_TYPES_FILE, STYLES_FILE_PATH].include?(e.name)
+          unless e.name == DOCUMENT_FILE_PATH || [RELATIONSHIP_FILE_PATH, CONTENT_TYPES_FILE, STYLES_FILE_PATH].include?(e.name)
             if e.name.include?("word/media/image")
               #  media files from header & footer from first document shouldn't be changed
               if head_foot_media["doc#{doc_cnt}"].include?(e.name.gsub("word/media/", ""))
