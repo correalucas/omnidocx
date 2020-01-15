@@ -228,8 +228,7 @@ class Omnidocx::Docx
 
           # appending the body_nodes to main document's body
           parent_node = @place.parent.parent
-          parent_node.children.remove
-          parent_node.add_child body_nodes
+          parent_node.replace body_nodes
         end
 
         doc_cnt += 1
